@@ -29,30 +29,25 @@ from psycopg2 import OperationalError
 saved_query_id = 12132808842
 _locale._getdefaultlocale = (lambda *args: ['en_US', 'UTF-8'])
 
-# Initialize a client object, by default uses the credentials in ~/googleads.yaml.
-
 client = ad_manager.AdManagerClient.LoadFromStorage(r'/Users/christian/Documents/Work/gam_api/ad_manager_keyfile.yml')
 report_downloader = client.GetDataDownloader(version='v202005')
 end_date = datetime.now().date()
 start_date = end_date - Timedelta(days=7)
 
-# Initialize a service.
 network_service = client.GetService('NetworkService', version='v202011')
 
-# Make a request.
 current_network = network_service.getCurrentNetwork()
 
 print ('Found network %s (%s)!' % (current_network['displayName'],current_network['networkCode']))
 
-# Create report job.
 def main(client, saved_query_id):
-  # Initialize appropriate service.
+
   report_service = client.GetService('ReportService', version='v202105')
 
-  # Initialize a DataDownloader.
+
   report_downloader = client.GetDataDownloader(version='v202105')
 
-  # Create statement object to filter for an order.
+
   statement = (ad_manager.StatementBuilder(version='v202105')
                .Where('id = :id')
                .WithBindVariable('id', int(saved_query_id))
@@ -67,29 +62,25 @@ def main(client, saved_query_id):
   if saved_query['isCompatibleWithApiVersion']:
     report_job = {}
 
-    # Set report query and optionally modify it.
+    
     report_job['reportQuery'] = saved_query['reportQuery']
 
 
-# Initialize a DataDownloader.
+
 report_downloader = client.GetDataDownloader(version='v202011')
 try:
-    # Run the report and wait for it to finish.
     report_job_id = report_downloader.WaitForReport(report_job)
 except errors.AdManagerReportError as e:
     print('Failed to generate report. Error was: %s' % e)
 
-  # Change to export format.
 export_format = 'CSV_DUMP'
 
 report_file = tempfile.NamedTemporaryFile(suffix='.csv.gz', delete=False,)
 
-  # Download report data.
 report_downloader.DownloadReportToFile(
     report_job_id, 'CSV_DUMP', report_file)
 
 
-  # Use pandas to join the two csv files into a match table
 report = pd.read_csv(report_file.name)
 df = pd.DataFrame(report)
 pd.set_option('display.max_columns', None)
@@ -130,9 +121,7 @@ def connect(engine):
         print("Connection successful....")
         
     except OperationalError as err:
-        # passing exception to function
         show_psycopg2_exception(err)        
-        # set the connection to 'None' in case of error
         conn = None
     return conn
 
@@ -156,9 +145,10 @@ conn.autocommit = True
 copy_from_dataframe(conn, dff)
 
 if __name__ == '__main__':
-  # Initialize client object.
   ad_manager_client = ad_manager.AdManagerClient.LoadFromStorage()
   main(ad_manager_client, SAVED_QUERY_ID)
+
+#Define DAGs
 
 default_args = {
   'owner' : 'christian',
